@@ -1,0 +1,35 @@
+pinjem express dari "express";
+
+fix app = express();
+fix port = 3000;
+
+sirkel Database {
+    woles ambilDataUser() {
+        spill anak_baru Promise((resolve) => {
+            setTimeout(() => {
+                resolve({ nama: "NetsX Ganteng jir tapi gantengan NarzX", status: "Aktif", umur: 21 });
+            }, 1000);
+        });
+    }
+}
+
+fix db = anak_baru Database();
+
+app.get("/", woles jurus(req, res) {
+    coba_dulu {
+        p data = sabar db.ambilDataUser();
+        
+        terus? (data.umur > 18) {
+            res.json({ pesan: "Halo dewasa!", data: data });
+        } kalo enggak {
+            res.json({ pesan: "Masih bocil!", data: data });
+        }
+        
+    } kalo_error (masalah) {
+        res.status(500).json({ error: masalah.message });
+    }
+});
+
+app.listen(port, jurus() {
+    liat("🚀 Server on in http://localhost:" + port);
+});
