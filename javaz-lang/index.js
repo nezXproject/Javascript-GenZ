@@ -7,28 +7,22 @@ import path from 'path';
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-    console.error("❌ Kasih nama filenya dong ngab! Contoh: javaz script.jz");
+    console.log("☕️ JavaZ CLI");
+    console.log("Cara pakai:");
+    console.log("  javaz run <file.jz>      : Menjalankan file secara langsung");
+    console.log("  javaz build <file.jz>    : Compile ke .js (Siap dipake buat Web/Production)");
     process.exit(1);
 }
 
-const filePath = path.resolve(args[0]);
+const command = args[0];
+const targetPath = args[1] ? path.resolve(args[1]) : null;
 
-if (!fs.existsSync(filePath)) {
-    console.error(`❌ Waduh, file ${args[0]} nggak ketemu nih.`);
+if (!targetPath || !fs.existsSync(targetPath)) {
+    console.error(`❌ Waduh, file ${args[1]} nggak ketemu nih.`);
     process.exit(1);
 }
 
-if (!filePath.endsWith('.jz')) {
-    console.error("❌ Filenya harus format .jz ya ges ya.");
-    process.exit(1);
-}
-
-let code = fs.readFileSync(filePath, 'utf-8');
-
-code = code.replace(/kalo enggak/g, 'else');
-code = code.replace(/terus\?/g, 'if');
-
-// Dictionary lengkap JavaZ
+// Dictionary JavaZ (Update ada async, from, new, extends)
 const dictionary = {
     // Deklarasi & Scope
     "p": "let",
@@ -41,7 +35,7 @@ const dictionary = {
     "gue": "this",
     "jurus": "function",
 
-    // Control Flow & Looping
+    // Control Flow
     "milih": "switch",
     "skenario": "case",
     "mentoknya": "default",
@@ -63,50 +57,57 @@ const dictionary = {
     "hoax": "false",
     "ghosting": "null",
 
-    // Operator & Type
+    // Async & Modules
+    "woles": "async", 
+    "sabar": "await",
+    "pamer": "export",
+    "pinjem": "import",
+    "dari": "from", 
+    "setor": "yield",
+    
+    // Lain-lain
     "spek": "typeof",
     "dalem": "in",
     "anak_buahnya": "instanceof",
     "buang": "delete",
     "hampa": "void",
-
-    // Module & Async
-    "pamer": "export",
-    "pinjem": "import",
-    "sabar": "await",
-    "setor": "yield",
-    
-    // Strict Mode / OOP Lanjut
-    "aturan": "interface",
-    "nurutin": "implements",
-    "paket": "package",
-    "jangan_kepo": "private",
-    "dijagain": "protected",
-    "buat_umum": "public",
-    "paten": "static",
-
-    // Tooling
-    "cek_dulu": "debugger",
-    "bareng": "with",
     "liat": "console.log"
 };
 
-// Looping untuk replace semua kata di dictionary pakai Regex (Word Boundary)
-for (const [genZ, js] of Object.entries(dictionary)) {
-    const regex = new RegExp(`\\b${genZ}\\b`, 'g');
-    code = code.replace(regex, js);
+// Fungsi utama penerjemah
+function transpile(code) {
+    let result = code.replace(/kalo enggak/g, 'else');
+    result = result.replace(/terus\?/g, 'if');
+    
+    for (const [genZ, js] of Object.entries(dictionary)) {
+        const regex = new RegExp(`\\b${genZ}\\b`, 'g');
+        result = result.replace(regex, js);
+    }
+    return result;
 }
 
-const tempFilePath = path.join(process.cwd(), '.javaz-temp.js');
-fs.writeFileSync(tempFilePath, code);
+// Baca file asli
+const sourceCode = fs.readFileSync(targetPath, 'utf-8');
+const compiledCode = transpile(sourceCode);
 
-try {
-    execSync(`node ${tempFilePath}`, { stdio: 'inherit' });
-} catch (error) {
-    console.error("\n❌ Yah, ada error di kodemu ngab. Cek lagi gih.");
-} finally {
-
-    if (fs.existsSync(tempFilePath)) {
-        fs.unlinkSync(tempFilePath);
+if (command === 'run') {
+    // Mode RUN: Eksekusi langsung
+    const tempFile = path.join(process.cwd(), '.javaz-temp.js');
+    fs.writeFileSync(tempFile, compiledCode);
+    try {
+        execSync(`node ${tempFile}`, { stdio: 'inherit' });
+    } catch (err) {
+        console.error("\n❌ Error ngab. Coba cek syntax-nya.");
+    } finally {
+        if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
     }
+} else if (command === 'build') {
+    // Mode BUILD: Buat file .js permanen untuk production/web
+    const ext = path.extname(targetPath);
+    const destPath = targetPath.replace(ext, '.js');
+    fs.writeFileSync(destPath, compiledCode);
+    console.log(`✅ Mantap! File berhasil di-build ke: ${path.basename(destPath)}`);
+    console.log(`Sekarang kamu bisa deploy pakai Node.js biasa!`);
+} else {
+    console.error("❌ Perintah nggak valid. Pakai 'run' atau 'build'.");
 }
