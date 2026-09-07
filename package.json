@@ -1,0 +1,12 @@
+{
+  "name": "Javascript-GenZ",
+  "version": "1.0.0",
+  "description": "JavaScript bahasa Gen Z Indonesia",
+  "main": "index.js",
+  "bin": {
+    "javaz": "./index.js"
+  },
+  "type": "module",
+  "author": "NezX-Ganteng+kece",
+  "license": "MIT"
+}
